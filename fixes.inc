@@ -2374,7 +2374,7 @@ public OnGameModeInit()
 				//  BEGIN: PlayerDialogResponse 
 				// =========================
 				#if FIX_PlayerDialogResponse
-					ShowPlayerDialog(playerid, -1 0, " ", " ", " ", " ");
+					ShowPlayerDialog(playerid, -1, 0, " ", " ", " ", " ");
 				#endif
 				// =========================
 				//  END:   PlayerDialogResponse 
