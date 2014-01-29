@@ -194,6 +194,16 @@
  * SEE:      "FIXES_GetPlayerDialog".
  * AUTHOR:   Y_Less/xX_Simon_Xx
  * POST:     http://forum.sa-mp.com/showpost.php?p=2141254
+ *
+ * FIX:      PlayerDialogResponse
+ * PROBLEM:  Current Player Dialog isn't hide when gamemode restart and this
+ *           cause server to print this "Warning: PlayerDialogResponse
+ *   		 PlayerId: 0 dialog ID doesn't match last sent dialog ID" if 
+ *           player response when gamemode is restarted.
+ * SOLUTION: Hide it. DEFAULTS TO FALSE!
+ * SEE:      "OnPlayerConnect", "OnGameModeExit".
+ * AUTHOR:   xX_Simon_Xx
+ * POST:     https://github.com/Y-Less/sa-mp-fixes/issues/2
  * 
  * FIX:      SetSpawnInfo
  * PROBLEM:  Kicks the player if "SpawnPlayer" is called before "SetSpawnInfo".
@@ -481,6 +491,22 @@
  * SEE:      N/A.
  * AUTHOR:   xX_Simon_Xx
  * POST:  	 http://forum.sa-mp.com/showpost.php?p=2693650&postcount=441
+ * 
+ * FIX:      ApplyAnimation
+ * PROBLEM:  Pass a non-valid animation library in ApplyAnimation cause client
+ *           Crash for streamed player.
+ * SOLUTION: Block ApplyAnimation when a non-valid library is passed.
+ * SEE:      "FIXES_ApplyAnimation".
+ * AUTHOR:   xX_Simon_Xx
+ * POST:  	 https://github.com/Y-Less/sa-mp-fixes/issues/5
+ * 
+ * FIX:      ApplyAnimation_2
+ * PROBLEM:  When ApplyAnimation was called the first time next the player
+ *           spawn, it don't work.
+ * SOLUTION: Apply a null animation at spawn.
+ * SEE:      "OnPlayerConnect".
+ * AUTHOR:   xX_Simon_Xx
+ * POST:  	 https://github.com/Y-Less/sa-mp-fixes/issues/5
  * 
  * ==============
  *  STYLE RULES: 
@@ -816,6 +842,20 @@
 	#define FIX_GangZoneCreate   (0)
 #endif
 
+#if !defined FIX_ApplyAnimation
+	#define FIX_ApplyAnimation   (1)
+#elseif _FIXES_IS_UNSET(FIX_ApplyAnimation)
+	#undef FIX_ApplyAnimation
+	#define FIX_ApplyAnimation   (0)
+#endif
+
+#if !defined FIX_ApplyAnimation_2
+	#define FIX_ApplyAnimation_2   (1)
+#elseif _FIXES_IS_UNSET(FIX_ApplyAnimation_2)
+	#undef FIX_ApplyAnimation_2
+	#define FIX_ApplyAnimation_2   (0)
+#endif
+
 #if !defined FIX_OnDialogResponse
 	#if defined GetVehicleModelInfo
 		#define FIX_OnDialogResponse     (0)
@@ -832,6 +872,13 @@
 #elseif _FIXES_IS_UNSET(FIX_GetPlayerDialog)
 	#undef FIX_GetPlayerDialog
 	#define FIX_GetPlayerDialog          (0)
+#endif
+
+#if !defined FIX_PlayerDialogResponse
+	#define FIX_PlayerDialogResponse     (0)
+#elseif _FIXES_IS_UNSET(FIX_PlayerDialogResponse)
+	#undef FIX_PlayerDialogResponse
+	#define FIX_PlayerDialogResponse     (0)
 #endif
 
 #if !defined FIX_SetSpawnInfo
@@ -1767,7 +1814,28 @@ static stock const
 	 * 
 	 * The property for a player's current menu.
 	 */
-	FIXES_gscMenuProperty[] = "FIXES_gscMenuProperty";
+	FIXES_gscMenuProperty[] = "FIXES_gscMenuProperty",
+	/*
+	 * FIXES_gscAnimLib[]
+	 * 
+	 * List of valid library animations.
+	 */
+	FIXES_gscAnimLib[][] =
+	{
+		"Attractors","Bar","Baseball","Bd_fire","Beach","Benchpress","Bf_injection","Biked","Bikeh","Bikeleap",
+		"Bikes","Bikev","Bike_dbz","Bmx","Bomber","Box","Bsktball","Buddy","Bus","Camera",
+		"Car","Carry","Car_chat","Casino","Chainsaw","Choppa","Clothes","Coach","Colt45","Cop_ambient",
+		"Cop_dvbyz","Crack","Crib","Dam_jump","Dancing","Dealer","Dildo","Dodge","Dozer","Drivebys",
+		"Fat","Fight_b","Fight_c","Fight_d","Fight_e","Finale","Finale2","Flame","Flowers","Food",
+		"Freeweights","Gangs","Ghands","Ghetto_db","Goggles","Graffiti","Graveyard","Grenade","Gymnasium","Haircuts",
+		"Heist9","Int_house","Int_office","Int_shop","Jst_buisness","Kart","Kissing","Knife","Lapdan1","Lapdan2",
+		"Lapdan3","Lowrider","Md_chase","Md_end","Medic","Misc","Mtb","Muscular","Nevada","On_lookers",
+		"Otb","Parachute","Park","Paulnmac","Ped","Player_dvbys","Playidles","Police","Pool","Poor",
+		"Python","Quad","Quad_dbz","Rapping","Rifle","Riot","Rob_bank","Rocket","Rustler","Ryder",
+		"Scratching","Shamal","Shop","Shotgun","Silenced","Skate","Smoking","Sniper","Spraycan","Strip",
+		"Sunbathe","Swat","Sweet","Swim","Sword","Tank","Tattoos","Tec","Train","Truck",
+		"Uzi","Van","Vending","Vortex","Wayfarer","Weapons","Wuzi","Wop","Gfunk","Runningman"
+	};
 
 static stock
 	/*
@@ -2024,7 +2092,7 @@ public OnGameModeInit()
  * 
  * Fast way of detecting not to retain any data.
  */
-#if !FIXES_Single
+#if !FIXES_Single || FIX_PlayerDialogResponse
 	public OnGameModeExit()
 	{
 		FIXES_gsSettings |= e_FIXES_SETTINGS_DROP_ALL_DATA;
@@ -2033,6 +2101,17 @@ public OnGameModeInit()
 			FIXES_gsSettings |= e_FIXES_SETTINGS_ENDING,
 			FIXES_DetermineOrder();
 		}
+		
+		// =========================
+		//  BEGIN: PlayerDialogResponse 
+		// =========================
+		for(new playerid=0; playerid < MAX_PLAYERS; playerid++) {
+			ShowPlayerDialog(playerid,-1, 0, " ", " ", " ", " ");
+		}
+		// =========================
+		//  END:   PlayerDialogResponse 
+		// =========================
+		
 		#if defined FIXES_OnGameModeExit
 			return FIXES_OnGameModeExit();
 		#else
@@ -2153,7 +2232,7 @@ public OnGameModeInit()
  *     TrainExit
  *     Kick
  */
-#if FIX_SetPlayerWorldBounds || FIX_TogglePlayerControllable || FIX_SetPlayerName || FIX_GetPlayerColor || FIX_GetPlayerSkin || FIX_IsPlayerInCheckpoint || FIX_IsPlayerInRaceCheckpoint || FIX_GetPlayerWeapon || FIX_PutPlayerInVehicle || FIX_OnPlayerEnterVehicle || FIX_AllowTeleport || FIX_OnDialogResponse || FIX_GetPlayerDialog || FIX_SetSpawnInfo || FIX_AllowInteriorWeapons || FIX_GetPlayerInterior || FIX_TrainExit || FIX_Kick || FIX_OnPlayerEnterVehicle_2
+#if FIX_SetPlayerWorldBounds || FIX_TogglePlayerControllable || FIX_SetPlayerName || FIX_GetPlayerColor || FIX_GetPlayerSkin || FIX_IsPlayerInCheckpoint || FIX_IsPlayerInRaceCheckpoint || FIX_GetPlayerWeapon || FIX_PutPlayerInVehicle || FIX_OnPlayerEnterVehicle || FIX_AllowTeleport || FIX_OnDialogResponse || FIX_GetPlayerDialog || FIX_SetSpawnInfo || FIX_AllowInteriorWeapons || FIX_GetPlayerInterior || FIX_TrainExit || FIX_Kick || FIX_OnPlayerEnterVehicle_2 || FIX_PlayerDialogResponse
 	public OnPlayerConnect(playerid)
 	{
 		FIXES_PRINTF("FIXES_OnPlayerConnect: %d", playerid);
@@ -2289,6 +2368,16 @@ public OnGameModeInit()
 				#endif
 				// =========================
 				//  END:   OnDialogResponse 
+				// =========================
+				
+				// =========================
+				//  BEGIN: PlayerDialogResponse 
+				// =========================
+				#if FIX_PlayerDialogResponse
+					ShowPlayerDialog(playerid, -1 0, " ", " ", " ", " ");
+				#endif
+				// =========================
+				//  END:   PlayerDialogResponse 
 				// =========================
 				
 				// =====================
@@ -2595,7 +2684,7 @@ public OnGameModeInit()
  *     GetPlayerSkin
  *     TogglePlayerControllable
  */
-#if FIX_GetPlayerSkin || FIX_TogglePlayerControllable || FIX_GetPlayerInterior
+#if FIX_GetPlayerSkin || FIX_TogglePlayerControllable || FIX_GetPlayerInterior || FIX_ApplyAnimation_2
 	public OnPlayerSpawn(playerid)
 	{
 		// ======================
@@ -2610,6 +2699,19 @@ public OnGameModeInit()
 		#endif
 		// ======================
 		//  END:   GetPlayerSkin 
+		// ======================
+		
+		// ======================
+		//  BEGIN: ApplyAnimation 
+		// ======================
+		#if FIX_ApplyAnimation_2
+			for(new i = 0; i < 130; i++)
+			{
+				ApplyAnimation(playerid,FIXES_gscAnimLib[i],"null",0.0,0,0,0,0,0);
+			}
+		#endif
+		// ======================
+		//  END:   ApplyAnimation 
 		// ======================
 		
 		// ==========================
@@ -5084,6 +5186,33 @@ public OnGameModeInit()
 		#define _ALS_GangZoneCreate
 	#endif
 	#define GangZoneCreate FIXES_GangZoneCreate
+#endif
+
+/*
+ * FIXES_ApplyAnimation(playerid, animlib[], animname[], Float:fDelta, loop, lockx, locky, freeze, time, forcesync = 0)
+ *
+ * FIXES:
+ *     ApplyAnimation
+ */
+#if FIX_ApplyAnimation
+	stock FIXES_ApplyAnimation(playerid, animlib[], animname[], Float:fDelta, loop, lockx, locky, freeze, time, forcesync = 0)
+	{
+		for(new i = 0; i < 130; i++)
+		{
+			if(!strcmp(animlib,FIXES_gscAnimLib[i],true)) return ApplyAnimation(playerid, animlib, animname, fDelta, loop, lockx, locky, freeze, time, forcesync);
+		}
+		return 0;
+	}
+	
+	#if defined _ALS_ApplyAnimation
+		#undef ApplyAnimation
+	#else
+		
+		native BAD_ApplyAnimation(playerid, animlib[], animname[], Float:fDelta, loop, lockx, locky, freeze, time, forcesync = 0) = ApplyAnimation;
+		
+		#define _ALS_ApplyAnimation
+	#endif
+	#define ApplyAnimation FIXES_ApplyAnimation
 #endif
 
 /*
