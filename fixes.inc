@@ -433,7 +433,7 @@
  * PROBLEM:  Always returns 0 for NPCs.
  * SOLUTION: Return the correct value.
  * SEE:      "FIXES_GetPlayerInterior", "FIXES_SetPlayerInterior".
- * AUTHOR:   Y_Less
+ * AUTHOR:   Y_Less/xX_Simon_Xx
  * POST:     http://forum.sa-mp.com/showpost.php?p=2309246
  * 
  * FIX:      ClearAnimations
@@ -1321,6 +1321,12 @@ static stock
 	 */
 	FIXES_gsDialogID[MAX_PLAYERS] = {-1, ...},
 	/* 
+	 * FIXES_gsInterior[MAX_PLAYERS]
+	 * 
+	 * The player's current interior.
+	 */
+	FIXES_gsInterior[MAX_PLAYERS],
+	/* 
 	 * e_FIXES_SETTINGS:FIXES_gsSettings
 	 * 
 	 * A collection of 1-bit options, compressed together to save space.
@@ -1809,7 +1815,13 @@ static stock
 	 * Used in OnDialogResponse to be able to get the correct ID in multiple
 	 * scripts while still correctly resetting the ID for future use.
 	 */
-	FIXES_pvarCurrentDialog[] = "FIXES_pvarCurrentDialog";
+	FIXES_pvarCurrentDialog[] = "FIXES_pvarCurrentDialog",
+	/*
+	 * FIXES_pvarPlayerInterior[]
+	 * 
+	 * A player's current interior.
+	 */
+	FIXES_pvarPlayerInterior[] = "FIXES_pvarPlayerInterior";
 
 /* 
  * _FIXES_KEY_AIM
@@ -2141,7 +2153,7 @@ public OnGameModeInit()
  *     TrainExit
  *     Kick
  */
-#if FIX_SetPlayerWorldBounds || FIX_TogglePlayerControllable || FIX_SetPlayerName || FIX_GetPlayerColor || FIX_GetPlayerSkin || FIX_IsPlayerInCheckpoint || FIX_IsPlayerInRaceCheckpoint || FIX_GetPlayerWeapon || FIX_PutPlayerInVehicle || FIX_OnPlayerEnterVehicle || FIX_AllowTeleport || FIX_OnDialogResponse || FIX_GetPlayerDialog || FIX_SetSpawnInfo || FIX_AllowInteriorWeapons || FIX_TrainExit || FIX_Kick || FIX_OnPlayerEnterVehicle_2
+#if FIX_SetPlayerWorldBounds || FIX_TogglePlayerControllable || FIX_SetPlayerName || FIX_GetPlayerColor || FIX_GetPlayerSkin || FIX_IsPlayerInCheckpoint || FIX_IsPlayerInRaceCheckpoint || FIX_GetPlayerWeapon || FIX_PutPlayerInVehicle || FIX_OnPlayerEnterVehicle || FIX_AllowTeleport || FIX_OnDialogResponse || FIX_GetPlayerDialog || FIX_SetSpawnInfo || FIX_AllowInteriorWeapons || FIX_GetPlayerInterior || FIX_TrainExit || FIX_Kick || FIX_OnPlayerEnterVehicle_2
 	public OnPlayerConnect(playerid)
 	{
 		FIXES_PRINTF("FIXES_OnPlayerConnect: %d", playerid);
@@ -2250,6 +2262,20 @@ public OnGameModeInit()
 				// ========================
 				//  END:   GetPlayerWeapon 
 				// ========================
+				
+				// ==========================
+				//  BEGIN: GetPlayerInterior 
+				// ==========================
+				#if FIX_GetPlayerInterior
+					#if FIXES_Single
+						FIXES_gsInterior[playerid] = 0;
+					#else
+						SetPVarInt(playerid, FIXES_pvarPlayerInterior, 0);
+					#endif
+				#endif
+				// ==========================
+				//  END:   GetPlayerInterior 
+				// ==========================
 				
 				// =========================
 				//  BEGIN: OnDialogResponse 
@@ -2569,7 +2595,7 @@ public OnGameModeInit()
  *     GetPlayerSkin
  *     TogglePlayerControllable
  */
-#if FIX_GetPlayerSkin || FIX_TogglePlayerControllable
+#if FIX_GetPlayerSkin || FIX_TogglePlayerControllable || FIX_GetPlayerInterior
 	public OnPlayerSpawn(playerid)
 	{
 		// ======================
@@ -2585,6 +2611,23 @@ public OnGameModeInit()
 		// ======================
 		//  END:   GetPlayerSkin 
 		// ======================
+		
+		// ==========================
+		//  BEGIN: GetPlayerInterior 
+		// ==========================
+		#if FIX_GetPlayerInterior
+			#if FIXES_Single
+				FIXES_gsInterior[playerid] = 0;
+			#else
+				if (FIXES_gsSettings & e_FIXES_SETTINGS_IN_CHARGE)
+				{
+					SetPVarInt(playerid, FIXES_pvarPlayerInterior, 0);
+				}
+			#endif
+		#endif
+		// ==========================
+		//  END:   GetPlayerInterior 
+		// ==========================
 		
 		// =================================
 		//  BEGIN: TogglePlayerControllable 
@@ -3235,9 +3278,29 @@ public OnGameModeInit()
  *     AllowInteriorWeapons
  */
 
-#if FIX_AllowInteriorWeapons
+#if FIX_AllowInteriorWeapons || FIX_GetPlayerInterior
 	public OnPlayerInteriorChange(playerid, newinteriorid, oldinteriorid)
 	{
+		// ==========================
+		//  BEGIN: GetPlayerInterior 
+		// ==========================
+		#if FIX_GetPlayerInterior
+			#if FIXES_Single
+				if (FIXES_gsInterior[playerid] != newinteriorid)
+				{
+					FIXES_gsInterior[playerid] = newinteriorid;
+				}
+			#else
+				if (FIXES_gsSettings & e_FIXES_SETTINGS_IN_CHARGE && FIXES_gsInterior[playerid] != newinteriorid)
+				{
+					SetPVarInt(playerid, FIXES_pvarPlayerInterior, newinteriorid);
+				}
+			#endif
+		#endif
+		// ==========================
+		//  END:   GetPlayerInterior 
+		// ==========================
+		
 		// =============================
 		//  BEGIN: AllowInteriorWeapons 
 		// =============================
@@ -3456,6 +3519,70 @@ public OnGameModeInit()
 			return 1;
 		}
 	}
+#endif
+
+
+/* 
+ * FIXES_GetPlayerInterior(playerid)
+ * 
+ * FIXES:
+ *     GetPlayerInterior
+ */
+#if FIX_GetPlayerInterior
+	stock FIXES_GetPlayerInterior(playerid)
+	{
+		if (0 <= playerid < MAX_PLAYERS)
+		{
+			#if FIXES_Single
+				return FIXES_gsInterior[playerid];
+			#else
+				return GetPVarInt(playerid, FIXES_pvarPlayerInterior);
+			#endif
+		}
+		return 0;
+	}
+	
+	#if defined _ALS_GetPlayerInterior
+		#undef GetPlayerInterior
+	#else
+		
+		native BAD_GetPlayerInterior(playerid) = GetPlayerInterior;
+		
+		#define _ALS_GetPlayerInterior
+	#endif
+	#define GetPlayerInterior FIXES_GetPlayerInterior
+#endif
+
+/* 
+ * FIXES_SetPlayerInterior(playerid, interiorid)
+ * 
+ * FIXES:
+ *     GetPlayerInterior
+ */
+#if FIX_GetPlayerInterior
+	stock FIXES_SetPlayerInterior(playerid, interiorid)
+	{
+		if (0 <= playerid < MAX_PLAYERS)
+		{
+			#if FIXES_Single
+				FIXES_gsInterior[playerid] = interiorid;
+			#else
+				SetPVarInt(playerid, FIXES_pvarPlayerInterior, interiorid);
+			#endif
+			return SetPlayerInterior(playerid, interiorid);
+		}
+		return 0;
+	}
+	
+	#if defined _ALS_SetPlayerInterior
+		#undef SetPlayerInterior
+	#else
+		
+		native BAD_SetPlayerInterior(playerid, interiorid) = SetPlayerInterior;
+		
+		#define _ALS_SetPlayerInterior
+	#endif
+	#define SetPlayerInterior FIXES_SetPlayerInterior
 #endif
 
 /* 
