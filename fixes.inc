@@ -3482,11 +3482,15 @@ public OnGameModeInit()
 					else FIXES_gsPlayerBools[playerid] &= ~e_FIXES_BOOLS_KEY_CROUCH;
 				}
 			}
-			return 0;
 		#endif
 		// =============================
 		//  END: KEY_CROUCH 
 		// =============================
+		#if defined FIXES_OnPlayerKeyStateChange
+			return FIXES_OnPlayerKeyStateChange(playerid, newkeys, oldkeys);
+		#else
+			return 1;
+		#endif
 	}
 	
 	#if defined _ALS_OnPlayerKeyStateChange
