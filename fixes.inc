@@ -502,9 +502,9 @@
  * 
  * FIX:      ApplyAnimation_2
  * PROBLEM:  When ApplyAnimation was called the first time next the player
- *           spawn, it don't work.
+ *           spawn, it don't work. DEFAULTS TO FALSE(To prevent 130 cicles at every PlayerSpawn)!
  * SOLUTION: Apply a null animation at spawn.
- * SEE:      "OnPlayerConnect".
+ * SEE:      "OnPlayerSpawn".
  * AUTHOR:   xX_Simon_Xx
  * POST:  	 https://github.com/Y-Less/sa-mp-fixes/issues/5
  * 
@@ -1146,7 +1146,7 @@
 #endif
 
 #if !defined FIX_ApplyAnimation_2
-	#define FIX_ApplyAnimation_2         (1)
+	#define FIX_ApplyAnimation_2         (0)
 #elseif _FIXES_IS_UNSET(FIX_ApplyAnimation_2)
 	#undef FIX_ApplyAnimation_2
 	#define FIX_ApplyAnimation_2         (0)
@@ -2807,7 +2807,7 @@ public OnGameModeInit()
  *     GetPlayerInterior
  *     OnPlayerSpawn
  */
-#if FIX_GetPlayerSkin || FIX_TogglePlayerControllable || FIX_GetPlayerInterior || FIX_OnPlayerSpawn
+#if FIX_GetPlayerSkin || FIX_TogglePlayerControllable || FIX_GetPlayerInterior || FIX_OnPlayerSpawn || FIX_ApplyAnimation_2
 	public OnPlayerSpawn(playerid)
 	{
 		#if !FIXES_Single
@@ -2855,6 +2855,18 @@ public OnGameModeInit()
 			#else
 				SetPVarInt(playerid, FIXES_pvarPlayerSkin, GetPlayerSkin(playerid));
 			#endif
+		#endif
+		// ======================
+		//  END:   GetPlayerSkin 
+		// ======================
+		
+		// ======================
+		//  BEGIN: ApplyAnimation
+		// ======================
+		#if FIX_ApplyAnimation_2
+			for(new i = 0; i < 130; i++) {
+				ApplyAnimation(playerid,FIXES_gscAnimLib[i],"null",0.0,0,0,0,0,0);
+			}
 		#endif
 		// ======================
 		//  END:   GetPlayerSkin 
