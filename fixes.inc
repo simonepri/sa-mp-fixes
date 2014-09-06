@@ -228,6 +228,13 @@
  * SEE:      "FIXES_SetPlayerSkin".
  * AUTHOR:   CyNiC
  * POST:     http://forum.sa-mp.com/showpost.php?p=1756094
+ *
+ * FIX:      SetPlayerSkin_2
+ * PROBLEM:  Freezes the player if they are performing certain animations.
+ * SOLUTION: Unfreeze them if isn't freezed.
+ * SEE:      "FIXES_SetPlayerSkin".
+ * AUTHOR:   xX_Simon_Xx
+ * POST:     https://github.com/Y-Less/sa-mp-fixes/issues/31
  * 
  * FIX:      HideMenuForPlayer
  * PROBLEM:  Crashes when passed an invalid menu ID.
@@ -1089,6 +1096,13 @@
 #elseif _FIXES_IS_UNSET(FIX_SetPlayerSkin)
 	#undef FIX_SetPlayerSkin
 	#define FIX_SetPlayerSkin            (2)
+#endif
+
+#if !defined FIX_SetPlayerSkin_2
+	#define FIX_SetPlayerSkin_2            (1)
+#elseif _FIXES_IS_UNSET(FIX_SetPlayerSkin_2)
+	#undef FIX_SetPlayerSkin_2
+	#define FIX_SetPlayerSkin_2            (2)
 #endif
 
 #if !defined FIX_HideMenuForPlayer
@@ -4273,7 +4287,7 @@ native BAD_SetPlayerName(playerid, const name[]) = SetPlayerName;
 #endif
 native BAD_SetPlayerSkin(playerid, skinid) = SetPlayerSkin;
 
-#if FIX_GetPlayerSkin || FIX_SetPlayerSkin
+#if FIX_GetPlayerSkin || FIX_SetPlayerSkin || FIX_SetPlayerSkin_2
 	stock FIXES_SetPlayerSkin(playerid, skinid)
 	{
 		// ======================
@@ -4304,18 +4318,18 @@ native BAD_SetPlayerSkin(playerid, skinid) = SetPlayerSkin;
 				// ======================
 				//  END:   GetPlayerSkin 
 				// ======================
-				
 				return ret;
 			}
 			
 			// ======================
-			//  BEGIN: GetPlayerSkin 
+			//  BEGIN: GetPlayerSkin || FIX_SetPlayerSkin_2
 			// ======================
-			#if FIX_GetPlayerSkin
+			#if FIX_GetPlayerSkin || FIX_SetPlayerSkin_2
 				else
+				{
 			#endif
 			// ======================
-			//  END:   GetPlayerSkin 
+			//  END:   GetPlayerSkin || FIX_SetPlayerSkin_2
 			// ======================
 		#endif
 		// ======================
@@ -4335,6 +4349,32 @@ native BAD_SetPlayerSkin(playerid, skinid) = SetPlayerSkin;
 		#endif
 		// ======================
 		//  END:   GetPlayerSkin 
+		// ======================
+		
+		// ======================
+		//  BEGIN: SetPlayerSkin_2 
+		// ======================
+		#if FIX_SetPlayerSkin_2
+			if(!(FIXES_gsPlayerBools[playerid] & e_FIXES_BOOLS_UNCONTROLLABLE))
+			{
+				new 
+					ret = SetPlayerSkin(playerid, skinid);
+				TogglePlayerControllable(playerid, true);
+				return ret;
+			}
+		#endif
+		// ======================
+		//  END:   SetPlayerSkin_2 
+		// ======================
+		
+		// ======================
+		//  BEGIN: GetPlayerSkin || FIX_SetPlayerSkin_2
+		// ======================
+		#if FIX_SetPlayerSkin
+		}
+		#endif
+		// ======================
+		//  END:   GetPlayerSkin || FIX_SetPlayerSkin_2
 		// ======================
 		
 		return SetPlayerSkin(playerid, skinid);
@@ -7817,7 +7857,7 @@ native BAD_SetPlayerCameraPos(playerid, Float:x, Float:y, Float:z) = SetPlayerCa
 #endif
 
 /* 
- * FIXES_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z)
+ * FIXES_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z, cut = CAMERA_CUT)
  * 
  * FIXES:
  *     SetPlayerCamera
@@ -7826,10 +7866,10 @@ native BAD_SetPlayerCameraPos(playerid, Float:x, Float:y, Float:z) = SetPlayerCa
 #if defined _ALS_SetPlayerCameraLookAt
 	#error _ALS_SetPlayerCameraLookAt defined
 #endif
-native BAD_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z) = SetPlayerCameraLookAt;
+native BAD_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z, cut = CAMERA_CUT) = SetPlayerCameraLookAt;
 
 #if FIX_SetPlayerCamera
-	stock FIXES_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z)
+	stock FIXES_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z, cut = CAMERA_CUT)
 	{
 		if (_FIXES_IN_RANGE(playerid, 0, MAX_PLAYERS))
 		{
@@ -7843,7 +7883,7 @@ native BAD_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z) = SetPlaye
 				}
 				else
 				{
-					SetPlayerCameraLookAt(playerid, x, y, z);
+					SetPlayerCameraLookAt(playerid, x, y, z, cut);
 				}
 		}
 		return 0;
