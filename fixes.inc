@@ -7817,7 +7817,7 @@ native BAD_SetPlayerCameraPos(playerid, Float:x, Float:y, Float:z) = SetPlayerCa
 #endif
 
 /* 
- * FIXES_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z)
+ * FIXES_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z, cut = CAMERA_CUT)
  * 
  * FIXES:
  *     SetPlayerCamera
@@ -7826,10 +7826,10 @@ native BAD_SetPlayerCameraPos(playerid, Float:x, Float:y, Float:z) = SetPlayerCa
 #if defined _ALS_SetPlayerCameraLookAt
 	#error _ALS_SetPlayerCameraLookAt defined
 #endif
-native BAD_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z) = SetPlayerCameraLookAt;
+native BAD_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z, cut = CAMERA_CUT) = SetPlayerCameraLookAt;
 
 #if FIX_SetPlayerCamera
-	stock FIXES_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z)
+	stock FIXES_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z, cut = CAMERA_CUT)
 	{
 		if (_FIXES_IN_RANGE(playerid, 0, MAX_PLAYERS))
 		{
@@ -7843,7 +7843,7 @@ native BAD_SetPlayerCameraLookAt(playerid, Float:x, Float:y, Float:z) = SetPlaye
 				}
 				else
 				{
-					SetPlayerCameraLookAt(playerid, x, y, z);
+					SetPlayerCameraLookAt(playerid, x, y, z, cut);
 				}
 		}
 		return 0;
